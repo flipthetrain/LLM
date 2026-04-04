@@ -75,12 +75,11 @@ namespace LLM_App
             }
 
             // ── Redirect stderr if an error file is configured ────────────────────
-            StreamWriter? errorWriter = null;
-            if (errorFile != null)
-            {
-                errorWriter = new StreamWriter(errorFile, append: false) { AutoFlush = true };
+            using StreamWriter? errorWriter = errorFile != null
+                ? new StreamWriter(errorFile, append: false) { AutoFlush = true }
+                : null;
+            if (errorWriter != null)
                 Console.SetError(errorWriter);
-            }
 
             // ── 1. Load corpus (only needed when training or when no saved vocab) ──
             string? vocabPath = loadPath != null ? loadPath + ".vocab" : null;
@@ -117,7 +116,7 @@ namespace LLM_App
                 Console.WriteLine($"Tokenizer: trained  ({tokenizer.VocabSize} tokens)");
             }
 
-            int[] allTokens = corpusPath != null ? tokenizer.Encode(corpus) : Array.Empty<int>();
+            int[] allTokens = corpusPath != null ? tokenizer.Encode(corpus) : [];
             if (corpusPath != null)
                 Console.WriteLine($"Total tokens: {allTokens.Length:N0}");
             Console.WriteLine();
@@ -148,7 +147,7 @@ namespace LLM_App
 
             // ── Validation split (after cfg so ContextLength is known) ────────
             int[] trainTokens = allTokens;
-            int[] valTokens   = Array.Empty<int>();
+            int[] valTokens = [];
 
             if (corpusPath != null && !appCfg.ValidationSplit.Equals("None", StringComparison.OrdinalIgnoreCase))
             {
@@ -257,7 +256,7 @@ namespace LLM_App
                     }
 
                     int[] generated = model.Generate(
-                        contextIds.ToArray(),
+                        [.. contextIds],
                         numTokens:   appCfg.MaxTokens,
                         temperature: appCfg.Temperature,
                         topK:        appCfg.TopK);
@@ -272,8 +271,6 @@ namespace LLM_App
                     contextIds.AddRange(generated);
                 }
             }
-
-            errorWriter?.Dispose();
 
         }   // using model → Dispose() here; GpuTransformerModel shuts down the GPU context
 
@@ -369,7 +366,7 @@ namespace LLM_App
                 Console.WriteLine($"    Adam β1/β2/ε   : {cfg.Beta1} / {cfg.Beta2} / {cfg.AdamEps}");
                 Console.WriteLine($"    Grad clip      : {cfg.GradClip}");
                 Console.WriteLine($"    Accumulation   : {cfg.AccumulationSteps}x  (eff. batch: {cfg.AccumulationSteps * cfg.ContextLength:N0} tokens)");
-                Console.WriteLine($"    Seed           : {(cfg.Seed >= 0 ? cfg.Seed.ToString() : "random")}");
+                Console.WriteLine($"    Seed           : {(cfg.Seed >= 0 ? cfg.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture) : "random")}");
                 if (cfg.SampleEvery > 0)
                     Console.WriteLine($"    Sample every   : {cfg.SampleEvery} epochs  (prompt: \"{cfg.SamplePrompt}\")");
             }
@@ -485,13 +482,10 @@ namespace LLM_App
             // ── Early-stopping state ──────────────────────────────────────────────
             bool   modeEpochs    = appCfg.TrainingMode.Equals("Epochs",        StringComparison.OrdinalIgnoreCase);
             bool   modePatience  = appCfg.TrainingMode.Equals("Patience",      StringComparison.OrdinalIgnoreCase);
-            bool   modeEarly     = appCfg.TrainingMode.Equals("EarlyStopping", StringComparison.OrdinalIgnoreCase);
             float  bestValLoss   = float.MaxValue;
             int    patienceLeft  = appCfg.Patience;
             bool   stopEarly     = false;
             bool   savedWeights  = false;
-
-            double lastReportTime = 0.0;  // epochTimer seconds at last console update
 
             double totalEpochSeconds = 0.0;
             var    epochTimer        = new Stopwatch();
@@ -501,7 +495,7 @@ namespace LLM_App
                 float epochLoss = 0f;
                 int   numChunks = 0;
                 epochTimer.Restart();
-                lastReportTime = 0.0;
+                double lastReportTime = 0.0;  // epochTimer seconds at last console update
 
                 int   accumN  = Math.Max(1, cfg.AccumulationSteps);
                 int[] input   = new int[T];
@@ -713,7 +707,7 @@ namespace LLM_App
         /// configuration key path.
         /// </returns>
         private static Dictionary<string, string> BuildSwitchMappings() =>
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            new(StringComparer.OrdinalIgnoreCase)
             {
                 // ── AppConfig ──────────────────────────────────────────────────
                 { "--action",               "AppConfig:Action"              },

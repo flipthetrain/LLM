@@ -104,10 +104,10 @@ namespace LLM_GPU
         /// Apply one Adam step entirely on the GPU.
         /// Also zeros the gradient buffer in the same kernel pass.
         /// </summary>
-        public void Update(float lr, float beta1, float beta2, float eps, int step)
+        public void Update(float lr, float beta1, float beta2, float eps, int adamStep)
         {
-            float bc1 = 1f - MathF.Pow(beta1, step);
-            float bc2 = 1f - MathF.Pow(beta2, step);
+            float bc1 = 1f - MathF.Pow(beta1, adamStep);
+            float bc2 = 1f - MathF.Pow(beta2, adamStep);
 
             _adamKernel ??= GpuContext.Accelerator
                 .LoadAutoGroupedStreamKernel<

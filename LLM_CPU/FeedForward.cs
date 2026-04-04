@@ -1,3 +1,4 @@
+using LLM_CPU;
 using System;
 using System.Collections.Generic;
 
@@ -48,16 +49,16 @@ namespace LLM
         // ── learnable parameters ──────────────────────────────────────────────────
 
         /// <summary>First linear weight W1, shape [D × d_ff].  Expands the representation.</summary>
-        public readonly Parameter W1;
+        public Parameter W1 { get; }
 
         /// <summary>First linear bias b1, shape [1 × d_ff].</summary>
-        public readonly Parameter B1;
+        public Parameter B1 { get; }
 
         /// <summary>Second linear weight W2, shape [d_ff × D].  Projects back to d_model.</summary>
-        public readonly Parameter W2;
+        public Parameter W2 { get; }
 
         /// <summary>Second linear bias b2, shape [1 × D].</summary>
-        public readonly Parameter B2;
+        public Parameter B2 { get; }
 
         // ── forward-pass cache ────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ namespace LLM
         /// <returns>Gradient dL/dX, shape [T × D].</returns>
         public Matrix Backward(Matrix dOut)
         {
+            ArgumentNullException.ThrowIfNull(dOut);
             if (_cachedX is null || _cachedPreActivation is null || _cachedPostActivation is null)
                 throw new InvalidOperationException("Backward called before Forward.");
 
@@ -204,7 +206,13 @@ namespace LLM
             yield return W2; yield return B2;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            W1.Dispose();
+            B1.Dispose();
+            W2.Dispose();
+            B2.Dispose();
+        }
 
         public override string ToString() =>
             $"FeedForward(d_model={_dModel}, d_ff={_dFF})";

@@ -50,6 +50,7 @@ namespace LLM
         /// <param name="parameters">All trainable parameters whose weights will be serialised.</param>
         public static void Save(string path, TransformerConfig cfg, IEnumerable<IParameter> parameters)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
             using var w  = new BinaryWriter(fs);
 
@@ -90,6 +91,7 @@ namespace LLM
         /// </exception>
         public static void ReadConfig(string path, TransformerConfig cfg)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             using var r  = new BinaryReader(fs);
 
@@ -126,6 +128,7 @@ namespace LLM
         /// </exception>
         public static void Load(string path, TransformerConfig cfg, IEnumerable<IParameter> parameters)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             using var r  = new BinaryReader(fs);
 
@@ -232,6 +235,7 @@ namespace LLM
         /// </param>
         public static void SaveCheckpoint(string path, TransformerConfig cfg, IEnumerable<IParameter> parameters, int completedEpoch, int adamStep, int innerStep)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
             using var w  = new BinaryWriter(fs);
 
@@ -287,6 +291,7 @@ namespace LLM
         /// </exception>
         public static (int epoch, int adamStep, int innerStep) LoadCheckpoint(string path, TransformerConfig cfg, IEnumerable<IParameter> parameters)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             using var r  = new BinaryReader(fs);
 

@@ -228,6 +228,7 @@ namespace LLM.Tokenizers
 
         public int[] Encode(string text)
         {
+            ArgumentNullException.ThrowIfNull(text);
             var result = new List<int>();
             foreach (string word in SplitWords(text))
             {
@@ -243,6 +244,7 @@ namespace LLM.Tokenizers
 
         public string Decode(int[] ids)
         {
+            ArgumentNullException.ThrowIfNull(ids);
             var sb = new StringBuilder();
             foreach (int id in ids) sb.Append(DecodeToken(id));
             string s = sb.ToString();
@@ -298,7 +300,7 @@ namespace LLM.Tokenizers
             {
                 string lpStr = double.IsNegativeInfinity(_logProb[i])
                     ? "-Infinity"
-                    : _logProb[i].ToString("R");
+                    : _logProb[i].ToString("R", System.Globalization.CultureInfo.InvariantCulture);
                 w.WriteLine($"{TokenizerIO.EscapeToken(_idToToken[i])}\t{lpStr}");
             }
         }
@@ -310,7 +312,7 @@ namespace LLM.Tokenizers
             string? line;
             while ((line = reader.ReadLine()) != null)
             {
-                int tab = line.IndexOf('\t');
+                int tab = line.IndexOf('\t', StringComparison.Ordinal);
                 if (tab < 0) continue;
                 tokens.Add(TokenizerIO.UnescapeToken(line.Substring(0, tab)));
                 string lpStr = line.Substring(tab + 1);

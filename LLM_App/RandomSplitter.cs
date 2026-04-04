@@ -8,7 +8,7 @@ namespace LLM_App
     /// <paramref name="valFraction"/> of them to validation and the rest to training.
     /// Uses a fixed seed so the split is reproducible across runs.
     /// </summary>
-    internal class RandomSplitter : ICorpusSplitter
+    internal sealed class RandomSplitter : ICorpusSplitter
     {
         private readonly int    _chunkSize;
         private readonly double _valFraction;

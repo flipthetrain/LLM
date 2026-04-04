@@ -16,7 +16,7 @@ namespace LLM_GPU
     /// </summary>
     public sealed class GpuTransformerModel : ITransformerModel
     {
-        public   readonly TransformerConfig     Config;
+        public TransformerConfig Config { get; }
         internal readonly IEmbeddingLayer<GpuMatrix> EmbeddingLayer;
         internal readonly ILayer<GpuMatrix>[]        Blocks;
         internal readonly ILayer<GpuMatrix>          FinalNorm;
@@ -28,6 +28,7 @@ namespace LLM_GPU
 
         public GpuTransformerModel(TransformerConfig cfg, Random rng)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             GpuContext.Initialize();   // must come first — all GPU allocations below depend on it
             cfg.Validate();
             Config           = cfg;
@@ -70,6 +71,7 @@ namespace LLM_GPU
         /// <inheritdoc/>
         public float Evaluate(int[] input, int[] targets)
         {
+            ArgumentNullException.ThrowIfNull(targets);
             using GpuMatrix logits = Forward(input);
             return CrossEntropyOnly(logits, targets, Config.VocabSize);
         }
@@ -77,10 +79,11 @@ namespace LLM_GPU
         /// <inheritdoc/>
         public float AccumulateStep(int[] input, int[] targets)
         {
+            ArgumentNullException.ThrowIfNull(targets);
             using GpuMatrix logits = Forward(input);
             float loss = CrossEntropyGrad(logits, targets, Config.VocabSize, out GpuMatrix dLogits);
-            Backward(dLogits);
-            dLogits.Dispose();
+            try { Backward(dLogits); }
+            finally { dLogits.Dispose(); }
             return loss;
         }
 
@@ -217,10 +220,10 @@ namespace LLM_GPU
             GpuMatrix dX;
             {
                 using var WoutT = OutputProjection.Weight.Transpose();
-                dX = GpuMatrix.Dot(dLogits, WoutT);
+                GpuMatrix preFinal = GpuMatrix.Dot(dLogits, WoutT);
+                dX = FinalNorm.Backward(preFinal);
+                preFinal.Dispose();
             }
-
-            dX = FinalNorm.Backward(dX);
 
             for (int i = Config.NumLayers - 1; i >= 0; i--)
             {

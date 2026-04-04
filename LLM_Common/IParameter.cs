@@ -21,7 +21,7 @@ namespace LLM
         void ZeroGrad();
 
         /// <summary>Apply one Adam optimiser step to this parameter.</summary>
-        void Update(float lr, float beta1, float beta2, float eps, int step);
+        void Update(float lr, float beta1, float beta2, float eps, int adamStep);
 
         /// <summary>
         /// Return a flat copy of the gradient values (row-major).

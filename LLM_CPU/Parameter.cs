@@ -1,3 +1,4 @@
+using LLM_CPU;
 using System;
 
 namespace LLM
@@ -21,14 +22,14 @@ namespace LLM
         // ── weight and gradient ───────────────────────────────────────────────────
 
         /// <summary>The actual learnable values, shape [Rows × Cols].</summary>
-        public readonly Matrix Weight;
+        public Matrix Weight { get; }
 
         /// <summary>
         /// Accumulated gradient for one mini-batch / sequence.
         /// Must be reset to zero before each forward/backward cycle by calling
         /// ZeroGrad().
         /// </summary>
-        public readonly Matrix Gradient;
+        public Matrix Gradient { get; }
 
         // ── Adam optimiser state ──────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ namespace LLM
         ///   m_t = β₁·m_{t-1} + (1−β₁)·g_t
         /// Initialised to zero; bias-corrected before each parameter update.
         /// </summary>
-        public readonly Matrix M;
+        public Matrix M { get; }
 
         /// <summary>
         /// Second moment estimate (exponential moving average of squared gradients).
@@ -46,7 +47,7 @@ namespace LLM
         ///   v_t = β₂·v_{t-1} + (1−β₂)·g_t²
         /// Initialised to zero; bias-corrected before each parameter update.
         /// </summary>
-        public readonly Matrix V;
+        public Matrix V { get; }
 
         // ── shape ─────────────────────────────────────────────────────────────────
 
@@ -135,12 +136,12 @@ namespace LLM
         /// <param name="beta1">Decay rate for first moment (default 0.9).</param>
         /// <param name="beta2">Decay rate for second moment (default 0.999).</param>
         /// <param name="eps">Small constant to prevent division by zero (default 1e-8).</param>
-        /// <param name="step">Global step count t, starting at 1.</param>
-        public void Update(float lr, float beta1, float beta2, float eps, int step)
+        /// <param name="adamStep">Global step count t, starting at 1.</param>
+        public void Update(float lr, float beta1, float beta2, float eps, int adamStep)
         {
             // Bias-correction denominators
-            float bc1 = 1f - MathF.Pow(beta1, step);   // 1 − β₁ᵗ
-            float bc2 = 1f - MathF.Pow(beta2, step);   // 1 − β₂ᵗ
+            float bc1 = 1f - MathF.Pow(beta1, adamStep);   // 1 − β₁ᵗ
+            float bc2 = 1f - MathF.Pow(beta2, adamStep);   // 1 − β₂ᵗ
 
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
@@ -193,6 +194,7 @@ namespace LLM
         /// <inheritdoc/>
         public void LoadWeightsFlat(float[] data)
         {
+            ArgumentNullException.ThrowIfNull(data);
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
                     Weight.Data[i, j] = data[i * Cols + j];
@@ -211,6 +213,7 @@ namespace LLM
         /// <inheritdoc/>
         public void LoadMFlat(float[] data)
         {
+            ArgumentNullException.ThrowIfNull(data);
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
                     M.Data[i, j] = data[i * Cols + j];
@@ -229,6 +232,7 @@ namespace LLM
         /// <inheritdoc/>
         public void LoadVFlat(float[] data)
         {
+            ArgumentNullException.ThrowIfNull(data);
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
                     V.Data[i, j] = data[i * Cols + j];

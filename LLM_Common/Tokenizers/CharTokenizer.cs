@@ -54,6 +54,7 @@ namespace LLM.Tokenizers
 
         public int[] Encode(string text)
         {
+            ArgumentNullException.ThrowIfNull(text);
             var ids = new int[text.Length];
             for (int i = 0; i < text.Length; i++)
                 ids[i] = _charToId.TryGetValue(text[i], out int tid) ? tid : UnknownId;
@@ -62,6 +63,7 @@ namespace LLM.Tokenizers
 
         public string Decode(int[] ids)
         {
+            ArgumentNullException.ThrowIfNull(ids);
             var sb = new StringBuilder(ids.Length);
             foreach (int id in ids)
             {

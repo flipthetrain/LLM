@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace LLM
+namespace LLM_CPU
 {
     /// <summary>
     /// Core 2-D matrix class used for every numerical computation in the transformer.
@@ -19,21 +19,21 @@ namespace LLM
         // ── storage ──────────────────────────────────────────────────────────────
 
         /// <summary>Raw storage in [rows, cols] layout.</summary>
-        public readonly float[,] Data;
+        public float[,] Data { get; }
 
         /// <summary>Number of rows (first dimension).</summary>
-        public readonly int Rows;
+        public int Rows { get; }
 
         /// <summary>Number of columns (second dimension).</summary>
-        public readonly int Cols;
+        public int Cols { get; }
 
         // ── constructors ─────────────────────────────────────────────────────────
 
         /// <summary>Allocate a zero-filled matrix of the given shape.</summary>
         public Matrix(int rows, int cols)
         {
-            if (rows <= 0) throw new ArgumentOutOfRangeException(nameof(rows));
-            if (cols <= 0) throw new ArgumentOutOfRangeException(nameof(cols));
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(rows);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(cols);
             Rows = rows;
             Cols = cols;
             Data = new float[rows, cols];
@@ -68,6 +68,8 @@ namespace LLM
         /// </summary>
         public static Matrix Dot(Matrix a, Matrix b)
         {
+            ArgumentNullException.ThrowIfNull(a);
+            ArgumentNullException.ThrowIfNull(b);
             if (a.Cols != b.Rows)
                 throw new InvalidOperationException(
                     $"Matrix dimension mismatch for Dot: [{a.Rows}×{a.Cols}] · [{b.Rows}×{b.Cols}]");
@@ -110,6 +112,8 @@ namespace LLM
         /// <summary>Element-wise addition: C[i,j] = A[i,j] + B[i,j].</summary>
         public static Matrix Add(Matrix a, Matrix b)
         {
+            ArgumentNullException.ThrowIfNull(a);
+            ArgumentNullException.ThrowIfNull(b);
             AssertSameShape(a, b, "Add");
             var result = new Matrix(a.Rows, a.Cols);
             for (int i = 0; i < a.Rows; i++)
@@ -121,6 +125,8 @@ namespace LLM
         /// <summary>Element-wise subtraction: C[i,j] = A[i,j] − B[i,j].</summary>
         public static Matrix Sub(Matrix a, Matrix b)
         {
+            ArgumentNullException.ThrowIfNull(a);
+            ArgumentNullException.ThrowIfNull(b);
             AssertSameShape(a, b, "Sub");
             var result = new Matrix(a.Rows, a.Cols);
             for (int i = 0; i < a.Rows; i++)
@@ -135,6 +141,8 @@ namespace LLM
         /// </summary>
         public static Matrix Mul(Matrix a, Matrix b)
         {
+            ArgumentNullException.ThrowIfNull(a);
+            ArgumentNullException.ThrowIfNull(b);
             AssertSameShape(a, b, "Mul");
             var result = new Matrix(a.Rows, a.Cols);
             for (int i = 0; i < a.Rows; i++)
@@ -165,6 +173,7 @@ namespace LLM
         /// </summary>
         public Matrix AddBias(float[] bias)
         {
+            ArgumentNullException.ThrowIfNull(bias);
             if (bias.Length != Cols)
                 throw new ArgumentException(
                     $"Bias length {bias.Length} does not match matrix columns {Cols}");
@@ -232,6 +241,8 @@ namespace LLM
         /// </summary>
         public static Matrix SoftmaxBackward(Matrix softmaxOut, Matrix dOut)
         {
+            ArgumentNullException.ThrowIfNull(softmaxOut);
+            ArgumentNullException.ThrowIfNull(dOut);
             AssertSameShape(softmaxOut, dOut, "SoftmaxBackward");
             var dIn = new Matrix(softmaxOut.Rows, softmaxOut.Cols);
             for (int i = 0; i < softmaxOut.Rows; i++)
@@ -378,6 +389,7 @@ namespace LLM
         /// </summary>
         public void AddSliceCols(Matrix src, int startCol)
         {
+            ArgumentNullException.ThrowIfNull(src);
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < src.Cols; j++)
                     Data[i, startCol + j] += src.Data[i, j];
@@ -394,6 +406,7 @@ namespace LLM
         /// </summary>
         public static Matrix ConcatCols(Matrix[] matrices)
         {
+            ArgumentNullException.ThrowIfNull(matrices);
             int rows = matrices[0].Rows;
             int totalCols = 0;
             foreach (var m in matrices)
@@ -426,6 +439,7 @@ namespace LLM
         /// </summary>
         public void AddInPlace(Matrix other)
         {
+            ArgumentNullException.ThrowIfNull(other);
             AssertSameShape(this, other, "AddInPlace");
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
@@ -465,6 +479,7 @@ namespace LLM
         /// </summary>
         public void XavierInit(Random rng, int fanIn, int fanOut)
         {
+            ArgumentNullException.ThrowIfNull(rng);
             float limit = MathF.Sqrt(6f / (fanIn + fanOut));
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
@@ -484,6 +499,7 @@ namespace LLM
         /// </summary>
         public void NormalInit(Random rng, float mean = 0f, float std = 0.02f)
         {
+            ArgumentNullException.ThrowIfNull(rng);
             for (int i = 0; i < Rows; i++)
                 for (int j = 0; j < Cols; j++)
                 {

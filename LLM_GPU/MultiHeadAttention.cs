@@ -169,9 +169,9 @@ namespace LLM_GPU
             }
 
             // ── 3. Per-head backward ──────────────────────────────────────────
-            var dQ = new GpuMatrix(T, D);
-            var dK = new GpuMatrix(T, D);
-            var dV = new GpuMatrix(T, D);
+            using var dQ = new GpuMatrix(T, D);
+            using var dK = new GpuMatrix(T, D);
+            using var dV = new GpuMatrix(T, D);
             dQ.Zero(); dK.Zero(); dV.Zero();
 
             float scale = _cfg.AttentionScale;
@@ -214,10 +214,12 @@ namespace LLM_GPU
                     dKh = tmp.Scale(scale);
                 }
 
-                dQ.AddSliceCols(dQh, cs);
-                dK.AddSliceCols(dKh, cs);
-                dV.AddSliceCols(dVh, cs);
-                dQh.Dispose(); dKh.Dispose(); dVh.Dispose();
+                using (dQh) using (dKh) using (dVh)
+                {
+                    dQ.AddSliceCols(dQh, cs);
+                    dK.AddSliceCols(dKh, cs);
+                    dV.AddSliceCols(dVh, cs);
+                }
             }
 
             dConcat.Dispose();
@@ -259,7 +261,6 @@ namespace LLM_GPU
                 dX.AddInPlace(t);
             }
 
-            dQ.Dispose(); dK.Dispose(); dV.Dispose();
             return dX;
         }
 

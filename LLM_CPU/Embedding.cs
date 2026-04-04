@@ -1,6 +1,7 @@
+using LLM;
 using System;
 
-namespace LLM
+namespace LLM_CPU
 {
     /// <summary>
     /// Combines token embeddings and positional encodings into the initial
@@ -50,7 +51,7 @@ namespace LLM
         /// Shape: [VocabSize × EmbeddingDim].
         /// Row i is the d_model-dimensional vector for token ID i.
         /// </summary>
-        public readonly Parameter TokenEmbedding;
+        public Parameter TokenEmbedding { get; }
 
         // ── fixed buffers ─────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ namespace LLM
         /// <param name="rng">Random number generator for weight initialisation.</param>
         public Embedding(TransformerConfig cfg, Random rng)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             _cfg = cfg;
 
             // Token embedding: GPT-2 uses std=0.02; use smaller for tiny models.
@@ -149,6 +151,7 @@ namespace LLM
         /// <param name="tokenIds">Array of integer token IDs, length = seqLen.</param>
         public Matrix Forward(int[] tokenIds)
         {
+            ArgumentNullException.ThrowIfNull(tokenIds);
             int seqLen = tokenIds.Length;
             if (seqLen > _cfg.ContextLength)
                 throw new ArgumentException(
@@ -203,6 +206,7 @@ namespace LLM
         /// </param>
         public void Backward(Matrix grad)
         {
+            ArgumentNullException.ThrowIfNull(grad);
             if (_cachedTokenIds is null)
                 throw new InvalidOperationException("Backward called before Forward.");
 
@@ -229,7 +233,10 @@ namespace LLM
             yield return TokenEmbedding;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            TokenEmbedding.Dispose();
+        }
 
         public override string ToString() =>
             $"Embedding(vocab={_cfg.VocabSize}, d={_cfg.EmbeddingDim})";

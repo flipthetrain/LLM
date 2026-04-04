@@ -1,3 +1,4 @@
+using LLM_CPU;
 using System;
 using System.Threading.Tasks;
 
@@ -53,13 +54,13 @@ namespace LLM
         /// Per-feature scale γ (gamma).
         /// Shape: [1 × dim].  Initialised to 1 so that the layer starts as identity.
         /// </summary>
-        public readonly Parameter Gamma;
+        public Parameter Gamma { get; }
 
         /// <summary>
         /// Per-feature shift β (beta).
         /// Shape: [1 × dim].  Initialised to 0.
         /// </summary>
-        public readonly Parameter Beta;
+        public Parameter Beta { get; }
 
         // ── forward-pass cache (for backward) ────────────────────────────────────
 
@@ -102,6 +103,7 @@ namespace LLM
         /// </summary>
         public Matrix Forward(Matrix x)
         {
+            ArgumentNullException.ThrowIfNull(x);
             int T = x.Rows;   // sequence length (number of positions to normalise)
             int D = x.Cols;   // feature dimension
 
@@ -239,7 +241,11 @@ namespace LLM
             yield return Beta;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            Gamma.Dispose();
+            Beta.Dispose();
+        }
 
         public override string ToString() => $"LayerNorm(dim={_dim})";
     }

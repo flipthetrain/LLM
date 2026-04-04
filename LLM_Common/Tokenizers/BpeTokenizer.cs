@@ -125,6 +125,7 @@ namespace LLM.Tokenizers
 
         public int[] Encode(string text)
         {
+            ArgumentNullException.ThrowIfNull(text);
             var result = new List<int>();
             foreach (string word in SplitWords(text))
             {
@@ -162,6 +163,7 @@ namespace LLM.Tokenizers
 
         public string Decode(int[] ids)
         {
+            ArgumentNullException.ThrowIfNull(ids);
             var sb = new StringBuilder();
             foreach (int id in ids) sb.Append(DecodeToken(id));
             return sb.ToString().TrimEnd();
@@ -177,7 +179,7 @@ namespace LLM.Tokenizers
             if (id < 0 || id >= _idToToken.Length) return "<UNK>";
             string t = _idToToken[id];
             return t.EndsWith(Eow, StringComparison.Ordinal)
-                ? t.Substring(0, t.Length - Eow.Length) + ' '
+                ? string.Concat(t.AsSpan(0, t.Length - Eow.Length), " ")
                 : t;
         }
 
@@ -236,7 +238,7 @@ namespace LLM.Tokenizers
             int rank = 0;
             while ((line = reader.ReadLine()) != null)
             {
-                int tab = line.IndexOf('\t');
+                int tab = line.IndexOf('\t', StringComparison.Ordinal);
                 if (tab < 0) continue;
                 string left  = TokenizerIO.UnescapeToken(line.Substring(0, tab));
                 string right = TokenizerIO.UnescapeToken(line.Substring(tab + 1));

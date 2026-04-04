@@ -49,8 +49,8 @@ namespace LLM_GPU
         // ── constructors ─────────────────────────────────────────────────────
         public GpuMatrix(int rows, int cols)
         {
-            if (rows <= 0) throw new ArgumentOutOfRangeException(nameof(rows));
-            if (cols <= 0) throw new ArgumentOutOfRangeException(nameof(cols));
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(rows);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(cols);
             Rows   = rows;
             Cols   = cols;
             Buffer = GpuContext.Accelerator.Allocate1D<float>(rows * cols);

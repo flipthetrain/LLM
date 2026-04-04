@@ -1,3 +1,4 @@
+using LLM_CPU;
 using System;
 using System.Collections.Generic;
 
@@ -50,16 +51,16 @@ namespace LLM
         // ── sub-layers ────────────────────────────────────────────────────────────
 
         /// <summary>Layer norm applied to the input before the attention sub-layer.</summary>
-        public readonly ILayer<Matrix> Norm1;
+        public ILayer<Matrix> Norm1 { get; }
 
         /// <summary>Multi-head causal self-attention.</summary>
-        public readonly ILayer<Matrix> Attention;
+        public ILayer<Matrix> Attention { get; }
 
         /// <summary>Layer norm applied to the input before the FFN sub-layer.</summary>
-        public readonly ILayer<Matrix> Norm2;
+        public ILayer<Matrix> Norm2 { get; }
 
         /// <summary>Position-wise feed-forward network.</summary>
-        public readonly ILayer<Matrix> FFN;
+        public ILayer<Matrix> FFN { get; }
 
         // ── forward-pass cache ────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ namespace LLM
         /// <param name="rng">Random number generator for weight initialisation.</param>
         public TransformerBlock(TransformerConfig cfg, Random rng)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             int D = cfg.EmbeddingDim;
 
             Norm1     = new LayerNorm(D);
@@ -250,7 +252,13 @@ namespace LLM
             foreach (var p in FFN.Parameters())       yield return p;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            Norm1.Dispose();
+            Attention.Dispose();
+            Norm2.Dispose();
+            FFN.Dispose();
+        }
 
         public override string ToString() => "TransformerBlock";
     }

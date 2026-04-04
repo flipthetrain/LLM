@@ -6,7 +6,7 @@ namespace LLM_App
     /// Holds out the last <paramref name="valFraction"/> of the token array as validation.
     /// The model never sees this text during training.
     /// </summary>
-    internal class TailSplitter : ICorpusSplitter
+    internal sealed class TailSplitter : ICorpusSplitter
     {
         private readonly double _valFraction;
 

@@ -5,7 +5,7 @@ namespace LLM_App
     /// Every property can be overridden at the command line using the corresponding
     /// kebab-case flag (e.g. <c>--train-file</c> overrides <see cref="TrainFile"/>).
     /// </summary>
-    internal class AppConfig
+    internal sealed class AppConfig
     {
         /// <summary>
         /// Action to perform.  Valid values: <c>Train</c>, <c>Prompt</c>.

@@ -38,7 +38,7 @@ namespace LLM.Tokenizers
 
         internal static string UnescapeToken(string tok)
         {
-            if (!tok.Contains('\\')) return tok;   // fast path
+            if (!tok.Contains('\\', StringComparison.Ordinal)) return tok;   // fast path
 
             var sb = new StringBuilder(tok.Length);
             for (int i = 0; i < tok.Length; i++)

@@ -137,6 +137,7 @@ namespace LLM.Tokenizers
 
         public int[] Encode(string text)
         {
+            ArgumentNullException.ThrowIfNull(text);
             var result = new List<int>();
             foreach (string word in SplitWords(text))
             {
@@ -181,6 +182,7 @@ namespace LLM.Tokenizers
 
         public string Decode(int[] ids)
         {
+            ArgumentNullException.ThrowIfNull(ids);
             var  sb    = new StringBuilder();
             bool first = true;
             foreach (int id in ids)
@@ -200,7 +202,7 @@ namespace LLM.Tokenizers
                 }
 
                 if (tok.StartsWith(Cont, StringComparison.Ordinal))
-                    sb.Append(tok.Substring(Cont.Length));
+                    sb.Append(tok.AsSpan(Cont.Length));
                 else
                 {
                     if (!first) sb.Append(' ');

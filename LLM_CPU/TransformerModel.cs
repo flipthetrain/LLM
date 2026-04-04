@@ -1,3 +1,4 @@
+using LLM_CPU;
 using System;
 using System.Collections.Generic;
 
@@ -47,22 +48,22 @@ namespace LLM
         // ── configuration ─────────────────────────────────────────────────────────
 
         /// <summary>All hyper-parameters for this model instance.</summary>
-        public readonly TransformerConfig Config;
+        public TransformerConfig Config { get; }
 
         // ── layers ────────────────────────────────────────────────────────────────
 
         /// <summary>Converts integer token IDs → dense embeddings.</summary>
-        public readonly IEmbeddingLayer<Matrix> EmbeddingLayer;
+        public IEmbeddingLayer<Matrix> EmbeddingLayer { get; }
 
         /// <summary>The stack of transformer blocks (the "depth" of the model).</summary>
-        public readonly ILayer<Matrix>[] Blocks;
+        public ILayer<Matrix>[] Blocks { get; }
 
         /// <summary>
         /// Final layer norm applied to the output of the last block before
         /// the linear projection.  Ensures the values fed to the vocabulary
         /// head are well-normalised.
         /// </summary>
-        public readonly ILayer<Matrix> FinalNorm;
+        public ILayer<Matrix> FinalNorm { get; }
 
         /// <summary>
         /// Linear projection from d_model to VocabSize.
@@ -73,10 +74,10 @@ namespace LLM
         /// here ("weight tying") to save parameters and improve generalisation.
         /// We keep them separate for clarity.
         /// </summary>
-        public readonly Parameter OutputProjection;
+        public Parameter OutputProjection { get; }
 
         /// <summary>Output projection bias, shape [1 × VocabSize].</summary>
-        public readonly Parameter OutputBias;
+        public Parameter OutputBias { get; }
 
         // ── forward-pass cache ────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ namespace LLM
         /// <param name="rng">Random number generator for weight initialisation.</param>
         public TransformerModel(TransformerConfig cfg, Random rng)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             cfg.Validate();
             Config = cfg;
             _rng   = rng;
@@ -152,6 +154,7 @@ namespace LLM
         /// <inheritdoc/>
         public float Evaluate(int[] input, int[] targets)
         {
+            ArgumentNullException.ThrowIfNull(targets);
             Matrix logits = Forward(input);
             return CrossEntropyOnly(logits, targets);
         }
@@ -159,6 +162,7 @@ namespace LLM
         /// <inheritdoc/>
         public float AccumulateStep(int[] input, int[] targets)
         {
+            ArgumentNullException.ThrowIfNull(targets);
             Matrix logits = Forward(input);
             float  loss   = CrossEntropyGrad(logits, targets, out Matrix dLogits);
             Backward(dLogits);
@@ -193,8 +197,15 @@ namespace LLM
                 ((TransformerBlock)block).ClearKVCache();
         }
 
-        /// <summary>CPU model has no unmanaged resources.</summary>
-        public void Dispose() { }
+        public void Dispose()
+        {
+            EmbeddingLayer.Dispose();
+            foreach (var block in Blocks)
+                block.Dispose();
+            FinalNorm.Dispose();
+            OutputProjection.Dispose();
+            OutputBias.Dispose();
+        }
 
         private static float CrossEntropyOnly(Matrix logits, int[] targets)
         {
@@ -308,6 +319,7 @@ namespace LLM
         /// <param name="dLogits">dL/d(logits), shape [T × VocabSize].</param>
         public void Backward(Matrix dLogits)
         {
+            ArgumentNullException.ThrowIfNull(dLogits);
             if (_cachedNormed is null)
                 throw new InvalidOperationException("Backward called before Forward.");
 
@@ -430,6 +442,7 @@ namespace LLM
         /// </param>
         public int[] Generate(int[] promptIds, int numTokens, float temperature = 1.0f, int topK = 40)
         {
+            ArgumentNullException.ThrowIfNull(promptIds);
             ClearKVCache();
 
             // Trim prompt to ContextLength

@@ -1,8 +1,9 @@
+using LLM;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace LLM
+namespace LLM_CPU
 {
     /// <summary>
     /// Multi-Head Causal Self-Attention (Vaswani et al., 2017 – "Attention Is All You Need").
@@ -53,22 +54,22 @@ namespace LLM
         // ── projection parameters ─────────────────────────────────────────────────
 
         /// <summary>Query projection weight Wq, shape [D × D].</summary>
-        public readonly Parameter Wq;
+        public Parameter Wq { get; }
         /// <summary>Key projection weight Wk, shape [D × D].</summary>
-        public readonly Parameter Wk;
+        public Parameter Wk { get; }
         /// <summary>Value projection weight Wv, shape [D × D].</summary>
-        public readonly Parameter Wv;
+        public Parameter Wv { get; }
         /// <summary>Output projection weight Wo, shape [D × D].</summary>
-        public readonly Parameter Wo;
+        public Parameter Wo { get; }
 
         /// <summary>Query bias bq, shape [1 × D].</summary>
-        public readonly Parameter Bq;
+        public Parameter Bq { get; }
         /// <summary>Key bias bk, shape [1 × D].</summary>
-        public readonly Parameter Bk;
+        public Parameter Bk { get; }
         /// <summary>Value bias bv, shape [1 × D].</summary>
-        public readonly Parameter Bv;
+        public Parameter Bv { get; }
         /// <summary>Output bias bo, shape [1 × D].</summary>
-        public readonly Parameter Bo;
+        public Parameter Bo { get; }
 
         // ── forward-pass cache ────────────────────────────────────────────────────
 
@@ -111,7 +112,7 @@ namespace LLM
         /// Recomputed whenever the sequence length changes.
         /// </summary>
         private Matrix? _causalMask;
-        private int     _cachedMaskLen = 0;
+        private int     _cachedMaskLen;
 
         // ── RoPE frequency tables ─────────────────────────────────────────────────
 
@@ -145,6 +146,7 @@ namespace LLM
         /// </summary>
         public MultiHeadAttention(TransformerConfig cfg, Random rng)
         {
+            ArgumentNullException.ThrowIfNull(cfg);
             _cfg     = cfg;
             _headDim = cfg.HeadDim;
             _useRoPE = cfg.UseRoPE;
@@ -217,6 +219,7 @@ namespace LLM
         /// </summary>
         public Matrix Forward(Matrix x)
         {
+            ArgumentNullException.ThrowIfNull(x);
             int T = x.Rows;   // sequence length
             int D = _cfg.EmbeddingDim;
             int H = _cfg.NumHeads;
@@ -348,6 +351,7 @@ namespace LLM
         /// </summary>
         public Matrix Backward(Matrix dResult)
         {
+            ArgumentNullException.ThrowIfNull(dResult);
             if (_cachedX is null)
                 throw new InvalidOperationException("Backward called before Forward.");
 
@@ -527,6 +531,7 @@ namespace LLM
         /// </summary>
         public Matrix ForwardCached(Matrix x, int posOffset)
         {
+            ArgumentNullException.ThrowIfNull(x);
             int newT = x.Rows;
             int D    = _cfg.EmbeddingDim;
             int H    = _cfg.NumHeads;
@@ -624,7 +629,11 @@ namespace LLM
             yield return Bq; yield return Bk; yield return Bv; yield return Bo;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            Wq.Dispose(); Wk.Dispose(); Wv.Dispose(); Wo.Dispose();
+            Bq.Dispose(); Bk.Dispose(); Bv.Dispose(); Bo.Dispose();
+        }
 
         public override string ToString() =>
             $"MultiHeadAttention(d={_cfg.EmbeddingDim}, heads={_cfg.NumHeads}, d_k={_headDim})";
